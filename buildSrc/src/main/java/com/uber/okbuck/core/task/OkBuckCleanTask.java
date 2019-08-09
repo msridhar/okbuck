@@ -1,19 +1,8 @@
 package com.uber.okbuck.core.task;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.uber.okbuck.OkBuckGradlePlugin;
-import com.uber.okbuck.core.model.base.ProjectType;
-import com.uber.okbuck.core.util.FileUtil;
-import com.uber.okbuck.core.util.MoreCollectors;
-import com.uber.okbuck.core.util.ProjectUtil;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Set;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
@@ -33,62 +22,63 @@ public class OkBuckCleanTask extends DefaultTask {
 
   @TaskAction
   void clean() throws IOException {
-    Project rootProject = getProject();
-    Path rootProjectPath = rootProject.getProjectDir().toPath();
-
-    File okbuckState = rootProject.file(OkBuckGradlePlugin.OKBUCK_STATE);
-
-    // Get last project paths
-    Set<String> lastProjectPaths;
-    if (okbuckState.exists()) {
-      try (Stream<String> lines = Files.lines(okbuckState.toPath())) {
-        lastProjectPaths =
-            lines
-                .map(String::trim)
-                .filter(s -> !Strings.isNullOrEmpty(s))
-                .collect(MoreCollectors.toImmutableSet());
-      }
-    } else {
-      lastProjectPaths = ImmutableSet.of();
-      okbuckState.getParentFile().mkdirs();
-      okbuckState.createNewFile();
-    }
-
-    Set<String> currentProjectPaths =
-        projects
-            .stream()
-            .filter(project -> ProjectUtil.getType(project) != ProjectType.UNKNOWN)
-            .map(
-                project ->
-                    project
-                        .getRootProject()
-                        .getProjectDir()
-                        .toPath()
-                        .relativize(project.getProjectDir().toPath())
-                        .toString())
-            .collect(MoreCollectors.toImmutableSet());
-
-    Sets.SetView<String> difference = Sets.difference(lastProjectPaths, currentProjectPaths);
-
-    // Delete stale project's BUCK file
-    difference
-        .stream()
-        .map(p -> rootProjectPath.resolve(p).resolve(OkBuckGradlePlugin.BUCK))
-        .forEach(FileUtil::deleteQuietly);
-
-    // Delete old .okbuck/cache dir
-    FileUtil.deleteQuietly(rootProjectPath.resolve(".okbuck/cache"));
-
-    // Delete old .okbuck/gen dir
-    FileUtil.deleteQuietly(rootProjectPath.resolve(".okbuck/gen"));
-
-    // Delete old .buckconfig.local
-    FileUtil.deleteQuietly(rootProjectPath.resolve(".buckconfig.local"));
-
-    // Save generated project's BUCK file path
-    Files.write(
-        okbuckState.toPath(),
-        currentProjectPaths.stream().sorted().collect(MoreCollectors.toImmutableList()));
+    //
+    //    Project rootProject = getProject();
+    //    Path rootProjectPath = rootProject.getProjectDir().toPath();
+    //
+    //    File okbuckState = rootProject.file(OkBuckGradlePlugin.OKBUCK_STATE);
+    //
+    //    // Get last project paths
+    //    Set<String> lastProjectPaths;
+    //    if (okbuckState.exists()) {
+    //      try (Stream<String> lines = Files.lines(okbuckState.toPath())) {
+    //        lastProjectPaths =
+    //            lines
+    //                .map(String::trim)
+    //                .filter(s -> !Strings.isNullOrEmpty(s))
+    //                .collect(MoreCollectors.toImmutableSet());
+    //      }
+    //    } else {
+    //      lastProjectPaths = ImmutableSet.of();
+    //      okbuckState.getParentFile().mkdirs();
+    //      okbuckState.createNewFile();
+    //    }
+    //
+    //    Set<String> currentProjectPaths =
+    //        projects
+    //            .stream()
+    //            .filter(project -> ProjectUtil.getType(project) != ProjectType.UNKNOWN)
+    //            .map(
+    //                project ->
+    //                    project
+    //                        .getRootProject()
+    //                        .getProjectDir()
+    //                        .toPath()
+    //                        .relativize(project.getProjectDir().toPath())
+    //                        .toString())
+    //            .collect(MoreCollectors.toImmutableSet());
+    //
+    //    Sets.SetView<String> difference = Sets.difference(lastProjectPaths, currentProjectPaths);
+    //
+    //    // Delete stale project's BUCK file
+    //    difference
+    //        .stream()
+    //        .map(p -> rootProjectPath.resolve(p).resolve(OkBuckGradlePlugin.BUCK))
+    //        .forEach(FileUtil::deleteQuietly);
+    //
+    //    // Delete old .okbuck/cache dir
+    //    FileUtil.deleteQuietly(rootProjectPath.resolve(".okbuck/cache"));
+    //
+    //    // Delete old .okbuck/gen dir
+    //    FileUtil.deleteQuietly(rootProjectPath.resolve(".okbuck/gen"));
+    //
+    //    // Delete old .buckconfig.local
+    //    FileUtil.deleteQuietly(rootProjectPath.resolve(".buckconfig.local"));
+    //
+    //    // Save generated project's BUCK file path
+    //    Files.write(
+    //        okbuckState.toPath(),
+    //        currentProjectPaths.stream().sorted().collect(MoreCollectors.toImmutableList()));
   }
 
   @Override

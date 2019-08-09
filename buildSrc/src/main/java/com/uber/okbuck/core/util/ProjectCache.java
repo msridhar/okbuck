@@ -1,7 +1,9 @@
 package com.uber.okbuck.core.util;
 
+import com.uber.okbuck.core.dependency.VersionlessDependency;
 import com.uber.okbuck.core.model.base.Scope;
 import com.uber.okbuck.core.model.base.TargetCache;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.gradle.api.Project;
@@ -10,6 +12,9 @@ public class ProjectCache {
 
   private static final String SCOPE_CACHE = "okbuckScopeCache";
   private static final String TARGET_CACHE = "okbuckTargetCache";
+
+  private static final String INFO_CACHE = "okbuckInfoCache";
+  private static final String SUBSTITUTION_CACHE = "okbuckSubstitutionCache";
 
   private ProjectCache() {}
 
@@ -69,5 +74,94 @@ public class ProjectCache {
 
   private static String getCacheKey(Project project, String prefix) {
     return prefix + project.getPath();
+  }
+
+  public static void initInfoCache(Project project) {
+    Project rootProject = project.getRootProject();
+
+    HashMap<VersionlessDependency, String> projectMap = new HashMap<>();
+    rootProject
+        .getSubprojects()
+        .forEach(
+            pp -> {
+              VersionlessDependency dependency =
+                  VersionlessDependency.builder()
+                      .setGroup((String) pp.getGroup())
+                      .setName(pp.getName())
+                      .build();
+              String path = pp.getPath().replace("/", ":");
+              projectMap.put(dependency, path);
+            });
+
+    rootProject
+        .getExtensions()
+        .getExtraProperties()
+        .set(getCacheKey(project, INFO_CACHE), projectMap);
+  }
+
+  public static void initSubstitutionCache(Project project) {
+    Project rootProject = project.getRootProject();
+
+    ConcurrentHashMap<VersionlessDependency, String> projectMap = new ConcurrentHashMap<>();
+    rootProject
+        .getExtensions()
+        .getExtraProperties()
+        .set(getCacheKey(project, SUBSTITUTION_CACHE), projectMap);
+  }
+
+  public static void resetInfoCache(Project project) {
+    Project rootProject = project.getRootProject();
+
+    project.getExtensions().getExtraProperties().set(getCacheKey(rootProject, INFO_CACHE), null);
+  }
+
+  public static void resetSubstitutionCache(Project project) {
+    Project rootProject = project.getRootProject();
+
+    ConcurrentHashMap<VersionlessDependency, String> subsCache = getSubstitutionCache(rootProject);
+    subsCache
+        .keySet()
+        .stream()
+        .sorted()
+        .forEach(
+            k -> {
+              String v = subsCache.get(k);
+              System.out.println(
+                  String.format(
+                      "substitute module(\"%s:%s) with project(\"%s\")", k.group(), k.name(), v));
+            });
+    project
+        .getExtensions()
+        .getExtraProperties()
+        .set(getCacheKey(rootProject, SUBSTITUTION_CACHE), null);
+  }
+
+  public static Map<VersionlessDependency, String> getInfoCache(Project project) {
+    Project rootProject = project.getRootProject();
+
+    String infoCacheKey = getCacheKey(rootProject, INFO_CACHE);
+
+    Map<VersionlessDependency, String> infoCache =
+        (Map<VersionlessDependency, String>) rootProject.property(infoCacheKey);
+    if (infoCache == null) {
+      throw new RuntimeException("Info cache external property '" + infoCacheKey + "' is not set.");
+    }
+    return infoCache;
+  }
+
+  public static ConcurrentHashMap<VersionlessDependency, String> getSubstitutionCache(
+      Project project) {
+    Project rootProject = project.getRootProject();
+
+    String substitutionCacheKey = getCacheKey(rootProject, SUBSTITUTION_CACHE);
+
+    ConcurrentHashMap<VersionlessDependency, String> substitutionCache =
+        (ConcurrentHashMap<VersionlessDependency, String>)
+            rootProject.property(substitutionCacheKey);
+    if (substitutionCache == null) {
+      throw new RuntimeException(
+          "Substitution cache external property '" + substitutionCacheKey + "' is not set.");
+    }
+    return substitutionCache;
   }
 }

@@ -2,21 +2,21 @@ package com.uber.okbuck.generator;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
-import com.uber.okbuck.OkBuckGradlePlugin;
 import com.uber.okbuck.composer.android.AndroidBinaryRuleComposer;
 import com.uber.okbuck.composer.android.AndroidBuckRuleComposer;
 import com.uber.okbuck.composer.android.AndroidBuildConfigRuleComposer;
 import com.uber.okbuck.composer.android.AndroidInstrumentationApkRuleComposer;
 import com.uber.okbuck.composer.android.AndroidInstrumentationTestRuleComposer;
+import com.uber.okbuck.composer.android.AndroidModuleRuleComposer;
 import com.uber.okbuck.composer.android.AndroidTestRuleComposer;
 import com.uber.okbuck.composer.android.ExopackageAndroidLibraryRuleComposer;
 import com.uber.okbuck.composer.android.GenAidlRuleComposer;
 import com.uber.okbuck.composer.android.KeystoreRuleComposer;
 import com.uber.okbuck.composer.android.ManifestRuleComposer;
 import com.uber.okbuck.composer.android.PreBuiltNativeLibraryRuleComposer;
-import com.uber.okbuck.composer.android.AndroidModuleRuleComposer;
 import com.uber.okbuck.composer.jvm.JvmLibraryRuleComposer;
 import com.uber.okbuck.composer.jvm.JvmTestRuleComposer;
+import com.uber.okbuck.core.dependency.VersionlessDependency;
 import com.uber.okbuck.core.manager.BuckFileManager;
 import com.uber.okbuck.core.model.android.AndroidAppInstrumentationTarget;
 import com.uber.okbuck.core.model.android.AndroidAppTarget;
@@ -24,6 +24,7 @@ import com.uber.okbuck.core.model.android.AndroidLibInstrumentationTarget;
 import com.uber.okbuck.core.model.android.AndroidLibTarget;
 import com.uber.okbuck.core.model.base.ProjectType;
 import com.uber.okbuck.core.model.base.RuleType;
+import com.uber.okbuck.core.model.base.Scope;
 import com.uber.okbuck.core.model.jvm.JvmTarget;
 import com.uber.okbuck.core.util.ProjectCache;
 import com.uber.okbuck.core.util.ProjectUtil;
@@ -35,6 +36,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.gradle.api.Project;
@@ -59,8 +62,24 @@ public final class BuckFileGenerator {
           ":" + visibilityExtension.visibilityFileName, visibilityExtension.visibilityFunction);
     }
 
-    File buckFile = project.file(OkBuckGradlePlugin.BUCK);
-    buckFileManager.writeToBuckFile(rules, buckFile, extraLoadStatements);
+    Map<VersionlessDependency, String> infoCache = ProjectCache.getInfoCache(project);
+    Map<String, Scope> scopeCache = ProjectCache.getScopeCache(project);
+
+    ConcurrentHashMap<VersionlessDependency, String> substitutionCache =
+        ProjectCache.getSubstitutionCache(project);
+
+    scopeCache.forEach(
+        (k, v) -> {
+          v.getExternalDeps()
+              .forEach(
+                  externalDep -> {
+                    VersionlessDependency versionlessDependency = externalDep.getVersionless();
+                    if (infoCache.containsKey(versionlessDependency)) {
+                      substitutionCache.put(
+                          versionlessDependency, infoCache.get(versionlessDependency));
+                    }
+                  });
+        });
   }
 
   private static List<Rule> createRules(Project project) {
@@ -133,7 +152,7 @@ public final class BuckFileGenerator {
       List<String> extraDeps,
       List<String> extraResDeps) {
 
-    String manifestRuleName = ":" +  AndroidBuckRuleComposer.libManifest(target);
+    String manifestRuleName = ":" + AndroidBuckRuleComposer.libManifest(target);
     List<Rule> androidLibRules = new ArrayList<>();
 
     // Aidl
@@ -165,19 +184,16 @@ public final class BuckFileGenerator {
     List<String> deps = androidLibRules.stream().map(Rule::buckName).collect(Collectors.toList());
     deps.addAll(extraDeps);
 
-
     // Unified android lib
     androidLibRules.add(
-        AndroidModuleRuleComposer.compose(
-            target, deps, aidlRuleNames, appClass, extraResDeps));
+        AndroidModuleRuleComposer.compose(target, deps, aidlRuleNames, appClass, extraResDeps));
 
     // Test
     if (target.getRobolectricEnabled()
         && !target.getTest().getSources().isEmpty()
         && !target.getIsTest()) {
       androidLibRules.add(
-          AndroidTestRuleComposer.compose(
-              target, manifestRuleName, deps, aidlRuleNames, appClass));
+          AndroidTestRuleComposer.compose(target, manifestRuleName, deps, aidlRuleNames, appClass));
     }
 
     return new ArrayList<>(androidLibRules);
