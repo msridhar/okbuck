@@ -3,11 +3,12 @@ package com.uber.okbuck.core.dependency;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ComparisonChain;
 import java.util.List;
 import java.util.Optional;
 
 @AutoValue
-public abstract class VersionlessDependency {
+public abstract class VersionlessDependency implements Comparable<VersionlessDependency> {
 
   static final String COORD_DELIMITER = ":";
 
@@ -63,5 +64,13 @@ public abstract class VersionlessDependency {
         throw new RuntimeException("Invalid dependency specified: " + s);
     }
     return versionless;
+  }
+
+  @Override
+  public int compareTo(VersionlessDependency vd) {
+    return ComparisonChain.start()
+        .compare(this.group(), vd.group())
+        .compare(this.name(), vd.name())
+        .result();
   }
 }

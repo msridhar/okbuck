@@ -34,6 +34,7 @@ import com.uber.okbuck.template.android.AndroidRule;
 import com.uber.okbuck.template.core.Rule;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,9 +66,10 @@ public final class BuckFileGenerator {
     Map<VersionlessDependency, String> infoCache = ProjectCache.getInfoCache(project);
     Map<String, Scope> scopeCache = ProjectCache.getScopeCache(project);
 
-    ConcurrentHashMap<VersionlessDependency, String> substitutionCache =
+    ConcurrentHashMap<String, HashMap<VersionlessDependency, String>> substitutionCache =
         ProjectCache.getSubstitutionCache(project);
 
+    HashMap<VersionlessDependency, String> subsCache = new HashMap<>();
     scopeCache.forEach(
         (k, v) -> {
           v.getExternalDeps()
@@ -75,11 +77,13 @@ public final class BuckFileGenerator {
                   externalDep -> {
                     VersionlessDependency versionlessDependency = externalDep.getVersionless();
                     if (infoCache.containsKey(versionlessDependency)) {
-                      substitutionCache.put(
-                          versionlessDependency, infoCache.get(versionlessDependency));
+                      subsCache.put(versionlessDependency, infoCache.get(versionlessDependency));
                     }
                   });
         });
+    if (subsCache.size() > 0) {
+      substitutionCache.put(project.getPath(), subsCache);
+    }
   }
 
   private static List<Rule> createRules(Project project) {

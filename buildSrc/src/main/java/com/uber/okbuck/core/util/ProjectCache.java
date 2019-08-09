@@ -3,6 +3,7 @@ package com.uber.okbuck.core.util;
 import com.uber.okbuck.core.dependency.VersionlessDependency;
 import com.uber.okbuck.core.model.base.Scope;
 import com.uber.okbuck.core.model.base.TargetCache;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -118,7 +119,20 @@ public class ProjectCache {
   public static void resetSubstitutionCache(Project project) {
     Project rootProject = project.getRootProject();
 
-    ConcurrentHashMap<VersionlessDependency, String> subsCache = getSubstitutionCache(rootProject);
+    ConcurrentHashMap<String, HashMap<VersionlessDependency, String>> subsCacheMap =
+        getSubstitutionCache(rootProject);
+
+    HashMap<VersionlessDependency, String> subsCache = new HashMap<>();
+    subsCacheMap
+        .values()
+        .stream()
+        .map(HashMap::entrySet)
+        .flatMap(Collection::stream)
+        .forEach(
+            i -> {
+              subsCache.put(i.getKey(), i.getValue());
+            });
+
     subsCache
         .keySet()
         .stream()
@@ -128,8 +142,19 @@ public class ProjectCache {
               String v = subsCache.get(k);
               System.out.println(
                   String.format(
-                      "substitute module(\"%s:%s) with project(\"%s\")", k.group(), k.name(), v));
+                      "substitute module(\"%s:%s\") with project(\"%s\")", k.group(), k.name(), v));
             });
+
+    subsCacheMap.forEach(
+        (key, value) -> {
+          System.out.println(key);
+          value
+              .values()
+              .forEach(
+                  i -> {
+                    System.out.println(String.format("implementation project(\"%s\"", i));
+                  });
+        });
     project
         .getExtensions()
         .getExtraProperties()
@@ -149,14 +174,14 @@ public class ProjectCache {
     return infoCache;
   }
 
-  public static ConcurrentHashMap<VersionlessDependency, String> getSubstitutionCache(
-      Project project) {
+  public static ConcurrentHashMap<String, HashMap<VersionlessDependency, String>>
+      getSubstitutionCache(Project project) {
     Project rootProject = project.getRootProject();
 
     String substitutionCacheKey = getCacheKey(rootProject, SUBSTITUTION_CACHE);
 
-    ConcurrentHashMap<VersionlessDependency, String> substitutionCache =
-        (ConcurrentHashMap<VersionlessDependency, String>)
+    ConcurrentHashMap<String, HashMap<VersionlessDependency, String>> substitutionCache =
+        (ConcurrentHashMap<String, HashMap<VersionlessDependency, String>>)
             rootProject.property(substitutionCacheKey);
     if (substitutionCache == null) {
       throw new RuntimeException(
