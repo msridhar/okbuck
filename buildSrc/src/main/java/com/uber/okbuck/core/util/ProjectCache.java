@@ -1,5 +1,6 @@
 package com.uber.okbuck.core.util;
 
+import com.google.errorprone.annotations.Var;
 import com.uber.okbuck.core.dependency.VersionlessDependency;
 import com.uber.okbuck.core.model.base.Scope;
 import com.uber.okbuck.core.model.base.TargetCache;
@@ -123,6 +124,8 @@ public class ProjectCache {
         getSubstitutionCache(rootProject);
 
     HashMap<VersionlessDependency, String> subsCache = new HashMap<>();
+    HashMap<VersionlessDependency, Integer> subsCacheCount = new HashMap<>();
+
     subsCacheMap
         .values()
         .stream()
@@ -130,7 +133,14 @@ public class ProjectCache {
         .flatMap(Collection::stream)
         .forEach(
             i -> {
-              subsCache.put(i.getKey(), i.getValue());
+              VersionlessDependency vd = i.getKey();
+              subsCache.put(vd, i.getValue());
+
+              @Var int count = 1;
+              if (subsCacheCount.containsKey(vd)) {
+                count = count + subsCacheCount.get(vd);
+              }
+              subsCacheCount.put(vd, count);
             });
 
     subsCache
@@ -142,7 +152,8 @@ public class ProjectCache {
               String v = subsCache.get(k);
               System.out.println(
                   String.format(
-                      "substitute module(\"%s:%s\") with project(\"%s\")", k.group(), k.name(), v));
+                      "substitute module(\"%s:%s\") with project(\"%s\"), %d",
+                      k.group(), k.name(), v, subsCacheCount.get(k)));
             });
 
     subsCacheMap.forEach(
@@ -152,7 +163,7 @@ public class ProjectCache {
               .values()
               .forEach(
                   i -> {
-                    System.out.println(String.format("implementation project(\"%s\"", i));
+                    System.out.println(String.format("implementation project(\"%s\")", i));
                   });
         });
     project
