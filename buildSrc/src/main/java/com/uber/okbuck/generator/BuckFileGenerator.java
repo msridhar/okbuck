@@ -16,7 +16,7 @@ import com.uber.okbuck.composer.android.ManifestRuleComposer;
 import com.uber.okbuck.composer.android.PreBuiltNativeLibraryRuleComposer;
 import com.uber.okbuck.composer.jvm.JvmLibraryRuleComposer;
 import com.uber.okbuck.composer.jvm.JvmTestRuleComposer;
-import com.uber.okbuck.core.dependency.VersionlessDependency;
+import com.uber.okbuck.core.dependency.ExternalDependency;
 import com.uber.okbuck.core.manager.BuckFileManager;
 import com.uber.okbuck.core.model.android.AndroidAppInstrumentationTarget;
 import com.uber.okbuck.core.model.android.AndroidAppTarget;
@@ -34,14 +34,16 @@ import com.uber.okbuck.template.android.AndroidRule;
 import com.uber.okbuck.template.core.Rule;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.ApplicationPlugin;
 
 public final class BuckFileGenerator {
 
@@ -50,6 +52,11 @@ public final class BuckFileGenerator {
   /** generate {@code BUCKFile} */
   public static void generate(
       Project project, BuckFileManager buckFileManager, VisibilityExtension visibilityExtension) {
+
+    if (!project.getPlugins().hasPlugin(ApplicationPlugin.class)) {
+      return;
+    }
+
     List<Rule> rules = createRules(project);
 
     File moduleDir = project.getBuildFile().getParentFile();
@@ -63,27 +70,51 @@ public final class BuckFileGenerator {
           ":" + visibilityExtension.visibilityFileName, visibilityExtension.visibilityFunction);
     }
 
-    Map<VersionlessDependency, String> infoCache = ProjectCache.getInfoCache(project);
     Map<String, Scope> scopeCache = ProjectCache.getScopeCache(project);
 
-    ConcurrentHashMap<String, HashMap<VersionlessDependency, String>> substitutionCache =
-        ProjectCache.getSubstitutionCache(project);
+    //    Map<VersionlessDependency, String> infoCache = ProjectCache.getInfoCache(project);
+    //
+    //    ConcurrentHashMap<String, HashMap<VersionlessDependency, String>> substitutionCache =
+    //        ProjectCache.getSubstitutionCache(project);
+    //
+    //    HashMap<VersionlessDependency, String> subsCache = new HashMap<>();
+    //    scopeCache.forEach(
+    //        (k, v) -> {
+    //          v.getExternalDeps()
+    //              .forEach(
+    //                  externalDep -> {
+    //                    VersionlessDependency versionlessDependency =
+    // externalDep.getVersionless();
+    //                    if (infoCache.containsKey(versionlessDependency)) {
+    //                      subsCache.put(versionlessDependency,
+    // infoCache.get(versionlessDependency));
+    //                    }
+    //                  });
+    //        });
+    //    if (subsCache.size() > 0) {
+    //      substitutionCache.put(project.getPath(), subsCache);
+    //    }
 
-    HashMap<VersionlessDependency, String> subsCache = new HashMap<>();
+    boolean topLevel = ProjectUtil.getOkBuckExtension(project).topLevel;
+
+    ConcurrentHashMap<String, HashSet<ExternalDependency>> dependencyCache =
+        ProjectCache.getDependencyCache(project);
+
+    HashSet<ExternalDependency> extDeps = new HashSet<>();
+    HashSet<ExternalDependency> extDepsTest = new HashSet<>();
+
     scopeCache.forEach(
         (k, v) -> {
-          v.getExternalDeps()
-              .forEach(
-                  externalDep -> {
-                    VersionlessDependency versionlessDependency = externalDep.getVersionless();
-                    if (infoCache.containsKey(versionlessDependency)) {
-                      subsCache.put(versionlessDependency, infoCache.get(versionlessDependency));
-                    }
-                  });
+          Set<ExternalDependency> depSet = v.getExternalDeps(topLevel);
+          if (k.equals("compileClasspath") || k.equals("runtimeClasspath")) {
+            extDeps.addAll(depSet);
+          }
+          if (k.equals("testCompileClasspath") || k.equals("testRuntimeClasspath")) {
+            extDepsTest.addAll(depSet);
+          }
         });
-    if (subsCache.size() > 0) {
-      substitutionCache.put(project.getPath(), subsCache);
-    }
+    dependencyCache.put(project.getPath(), extDeps);
+    dependencyCache.put(project.getPath() + "__test", extDepsTest);
   }
 
   private static List<Rule> createRules(Project project) {

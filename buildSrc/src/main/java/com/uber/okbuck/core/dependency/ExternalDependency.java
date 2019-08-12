@@ -24,7 +24,7 @@ import org.gradle.api.artifacts.Dependency;
  * Represents a pre packaged dependency from an external source like gradle/maven cache or the
  * filesystem
  */
-public class ExternalDependency {
+public class ExternalDependency implements Comparable<ExternalDependency> {
   private static final String SOURCE_FILE = "-sources.jar";
 
   private final BaseExternalDependency base;
@@ -215,5 +215,14 @@ public class ExternalDependency {
         .stream()
         .filter(dependency -> dependency.getPackaging().equals(JAR))
         .collect(Collectors.toSet());
+  }
+
+  @Override
+  public int compareTo(ExternalDependency ed) {
+    return ComparisonChain.start()
+        .compare(this.getGroup(), ed.getGroup())
+        .compare(this.getName(), ed.getName())
+        .compare(this.getVersion(), ed.getVersion())
+        .result();
   }
 }

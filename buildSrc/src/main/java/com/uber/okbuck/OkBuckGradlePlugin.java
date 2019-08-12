@@ -210,9 +210,11 @@ public class OkBuckGradlePlugin implements Plugin<Project> {
                 // be available until okbuck tasks of all the projects finishes.
                 ProjectCache.resetTargetCacheForAll(rootProject);
 
-                ProjectCache.resetInfoCache(rootProject);
+                //                ProjectCache.resetInfoCache(rootProject);
+                //
+                //                ProjectCache.resetSubstitutionCache(rootProject);
 
-                ProjectCache.resetSubstitutionCache(rootProject);
+                ProjectCache.resetDependencyCache(rootProject);
               });
 
           WrapperExtension wrapper = okbuckExt.getWrapperExtension();
@@ -267,9 +269,11 @@ public class OkBuckGradlePlugin implements Plugin<Project> {
                 // Init root project's scope cache.
                 ProjectCache.initScopeCache(rootProject);
 
-                ProjectCache.initInfoCache(rootProject);
+                ProjectCache.initDependencyCache(rootProject);
 
                 ProjectCache.initSubstitutionCache(rootProject);
+
+                ProjectCache.initInfoCache(rootProject);
 
                 depCache = new DependencyCache(rootBuckProject, dependencyManager, FORCED_OKBUCK);
 

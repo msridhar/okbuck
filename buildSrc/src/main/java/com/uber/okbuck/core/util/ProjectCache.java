@@ -1,12 +1,15 @@
 package com.uber.okbuck.core.util;
 
 import com.google.errorprone.annotations.Var;
+import com.uber.okbuck.core.dependency.ExternalDependency;
 import com.uber.okbuck.core.dependency.VersionlessDependency;
 import com.uber.okbuck.core.model.base.Scope;
 import com.uber.okbuck.core.model.base.TargetCache;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.gradle.api.Project;
 
@@ -17,6 +20,7 @@ public class ProjectCache {
 
   private static final String INFO_CACHE = "okbuckInfoCache";
   private static final String SUBSTITUTION_CACHE = "okbuckSubstitutionCache";
+  private static final String DEPENDENCY_CACHE = "okbuckDependencyCache";
 
   private ProjectCache() {}
 
@@ -104,11 +108,22 @@ public class ProjectCache {
   public static void initSubstitutionCache(Project project) {
     Project rootProject = project.getRootProject();
 
-    ConcurrentHashMap<VersionlessDependency, String> projectMap = new ConcurrentHashMap<>();
+    ConcurrentHashMap<String, HashMap<VersionlessDependency, String>> projectMap =
+        new ConcurrentHashMap<>();
     rootProject
         .getExtensions()
         .getExtraProperties()
         .set(getCacheKey(project, SUBSTITUTION_CACHE), projectMap);
+  }
+
+  public static void initDependencyCache(Project project) {
+    Project rootProject = project.getRootProject();
+
+    ConcurrentHashMap<String, HashSet<ExternalDependency>> projectMap = new ConcurrentHashMap<>();
+    rootProject
+        .getExtensions()
+        .getExtraProperties()
+        .set(getCacheKey(project, DEPENDENCY_CACHE), projectMap);
   }
 
   public static void resetInfoCache(Project project) {
@@ -158,6 +173,7 @@ public class ProjectCache {
 
     subsCacheMap.forEach(
         (key, value) -> {
+          System.out.println();
           System.out.println(key);
           value
               .values()
@@ -170,6 +186,81 @@ public class ProjectCache {
         .getExtensions()
         .getExtraProperties()
         .set(getCacheKey(rootProject, SUBSTITUTION_CACHE), null);
+  }
+
+  @SuppressWarnings("Var")
+  public static void resetDependencyCache(Project project) {
+    Project rootProject = project.getRootProject();
+
+    ConcurrentHashMap<String, HashSet<ExternalDependency>> depsCacheMap =
+        getDependencyCache(rootProject);
+
+    HashMap<ExternalDependency, Integer> depsCacheCount = new HashMap<>();
+
+    boolean multipleVersionOnly = ProjectUtil.getOkBuckExtension(project).onlyMultiple;
+    final int valueAbove = multipleVersionOnly ? 1 : 0;
+
+    depsCacheMap
+        .values()
+        .stream()
+        .flatMap(Collection::stream)
+        .forEach(
+            i -> {
+              @Var int count = 1;
+              if (depsCacheCount.containsKey(i)) {
+                count = count + depsCacheCount.get(i);
+              }
+              depsCacheCount.put(i, count);
+            });
+
+    final String[] lastCoords = {"", "0", ""};
+    depsCacheCount
+        .keySet()
+        .stream()
+        .sorted()
+        .forEach(
+            k -> {
+              int v = Objects.requireNonNull(depsCacheCount.get(k));
+              String mc = k.getMavenCoords();
+              int index = mc.lastIndexOf(":");
+              String currentCoords = mc.substring(0, index);
+
+              if (!currentCoords.equals(lastCoords[0])) {
+                if (Integer.valueOf(lastCoords[1]) > valueAbove) {
+                  System.out.println(lastCoords[2]);
+                }
+                lastCoords[1] = "0";
+                lastCoords[2] = "";
+              }
+              lastCoords[0] = currentCoords;
+              lastCoords[1] = String.valueOf(Integer.valueOf(lastCoords[1]) + 1);
+              lastCoords[2] =
+                  lastCoords[2]
+                      + mc.substring(0, index)
+                      + ","
+                      + mc.substring(index + 1)
+                      + ","
+                      + v
+                      + "\n";
+            });
+    if (Integer.valueOf(lastCoords[1]) > valueAbove) {
+      System.out.println(lastCoords[2]);
+    }
+
+    //    depsCacheMap.forEach(
+    //        (key, value) -> {
+    //          System.out.println();
+    //          System.out.println(key);
+    //          value
+    //              .forEach(
+    //                  i -> {
+    //                    System.out.println(i.getMavenCoords());
+    //                  });
+    //        });
+    project
+        .getExtensions()
+        .getExtraProperties()
+        .set(getCacheKey(rootProject, DEPENDENCY_CACHE), null);
   }
 
   public static Map<VersionlessDependency, String> getInfoCache(Project project) {
@@ -199,5 +290,21 @@ public class ProjectCache {
           "Substitution cache external property '" + substitutionCacheKey + "' is not set.");
     }
     return substitutionCache;
+  }
+
+  public static ConcurrentHashMap<String, HashSet<ExternalDependency>> getDependencyCache(
+      Project project) {
+    Project rootProject = project.getRootProject();
+
+    String dependencyCacheKey = getCacheKey(rootProject, DEPENDENCY_CACHE);
+
+    ConcurrentHashMap<String, HashSet<ExternalDependency>> dependencyCache =
+        (ConcurrentHashMap<String, HashSet<ExternalDependency>>)
+            rootProject.property(dependencyCacheKey);
+    if (dependencyCache == null) {
+      throw new RuntimeException(
+          "Substitution cache external property '" + dependencyCacheKey + "' is not set.");
+    }
+    return dependencyCache;
   }
 }

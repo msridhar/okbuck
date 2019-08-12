@@ -15,6 +15,9 @@ import org.gradle.api.tasks.Input;
 @SuppressWarnings("unused")
 public class OkBuckExtension {
 
+  @Input public boolean topLevel = true;
+  @Input public boolean onlyMultiple = true;
+
   /** Build Tools Version */
   @Input public String buildToolVersion = "28.0.2";
 
