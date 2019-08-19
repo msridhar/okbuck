@@ -2,12 +2,22 @@ package com.uber.okbuck.core.dependency;
 
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Streams;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+<<<<<<< HEAD
 import java.util.Optional;
 import java.util.stream.Collectors;
+=======
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+>>>>>>> Pad version names so buck sorts them properly
 
 import org.apache.commons.io.FilenameUtils;
 import org.gradle.api.artifacts.Dependency;
@@ -32,6 +42,8 @@ public abstract class BaseExternalDependency {
 
   abstract boolean isVersioned();
 
+  abstract boolean usePaddedVersion();
+
   public static Builder builder() {
     return new AutoValue_BaseExternalDependency.Builder();
   }
@@ -44,6 +56,8 @@ public abstract class BaseExternalDependency {
     public abstract Builder setVersion(String value);
 
     public abstract Builder setIsVersioned(boolean value);
+
+    public abstract Builder setUsePaddedVersion(boolean value);
 
     public abstract Builder setRealDependencyFile(File value);
 
@@ -87,11 +101,16 @@ public abstract class BaseExternalDependency {
   public String targetName() {
     StringBuilder targetName = new StringBuilder(versionless().name());
     if (isVersioned()) {
-      String paddedOVersion = Arrays.stream(version().split("\\."))
-          .filter(version -> version.length() < 3)
-          .map(version -> "000".substring(version.length()) + version)
-          .collect(Collectors.joining("."));
-      targetName.append(NAME_DELIMITER).append(paddedOVersion);
+      if (!usePaddedVersion()) {
+        targetName.append(NAME_DELIMITER).append(version());
+      } else {
+        targetName.append(NAME_DELIMITER);
+        Iterable<String> versionSplit = Splitter.onPattern("(?<=\\.)").split(version());
+        for (String part : versionSplit) {
+          String padding = "0000".substring(Math.min(part.length(), 3));
+          targetName.append(padding).append(part);
+        }
+      }
     }
     targetName.append(versionless().classifier().map(c -> NAME_DELIMITER + c).orElse(""));
 
@@ -103,7 +122,6 @@ public abstract class BaseExternalDependency {
     return versionless().name()
         + versionless().classifier().map(c -> NAME_DELIMITER + c).orElse("");
   }
-
   @Memoized
   Path basePath() {
     return Paths.get(versionless().group().replace('.', File.separatorChar));

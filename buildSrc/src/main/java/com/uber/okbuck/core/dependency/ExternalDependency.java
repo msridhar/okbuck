@@ -95,6 +95,12 @@ public class ExternalDependency {
     return this.base.version();
   }
 
+  /* Returns true if dependency version number is padded with zeroes. */
+  /* Eg. 1.12.0 would become 001.012.000 */
+  public boolean usePaddedVersion() {
+    return this.base.usePaddedVersion();
+  }
+
   /** Returns the real artifact file of the dependency. */
   public File getRealDependencyFile() {
     return this.base.realDependencyFile();
@@ -195,6 +201,7 @@ public class ExternalDependency {
             .setVersionless(versionlessDependency)
             .setVersion(version)
             .setIsVersioned(externalDependenciesExtension.isVersioned(versionlessDependency))
+            .setUsePaddedVersion(true)
             .setRealDependencyFile(dependencyFile)
             .setRealDependencySourceFile(Optional.ofNullable(dependencySourceFile))
             .build();
