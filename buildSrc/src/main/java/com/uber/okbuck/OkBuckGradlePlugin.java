@@ -210,9 +210,8 @@ public class OkBuckGradlePlugin implements Plugin<Project> {
                 // be available until okbuck tasks of all the projects finishes.
                 ProjectCache.resetTargetCacheForAll(rootProject);
 
-                //                ProjectCache.resetInfoCache(rootProject);
-                //
-                //                ProjectCache.resetSubstitutionCache(rootProject);
+                ProjectCache.resetInfoCache(rootProject);
+                ProjectCache.resetSubstitutionCache(rootProject);
 
                 ProjectCache.resetDependencyCache(rootProject);
               });

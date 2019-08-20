@@ -165,10 +165,11 @@ public class ProjectCache {
         .forEach(
             k -> {
               String v = subsCache.get(k);
-              System.out.println(
-                  String.format(
-                      "substitute module(\"%s:%s\") with project(\"%s\"), %d",
-                      k.group(), k.name(), v, subsCacheCount.get(k)));
+              System.out.println(String.format("\"%s:%s\", \"%s\"", k.group(), k.name(), v));
+              //              System.out.println(
+              //                  String.format(
+              //                      "substitute module(\"%s:%s\") with project(\"%s\"), %d",
+              //                      k.group(), k.name(), v, subsCacheCount.get(k)));
             });
 
     subsCacheMap.forEach(
@@ -247,16 +248,15 @@ public class ProjectCache {
       System.out.println(lastCoords[2]);
     }
 
-    //    depsCacheMap.forEach(
-    //        (key, value) -> {
-    //          System.out.println();
-    //          System.out.println(key);
-    //          value
-    //              .forEach(
-    //                  i -> {
-    //                    System.out.println(i.getMavenCoords());
-    //                  });
-    //        });
+    depsCacheMap.forEach(
+        (key, value) -> {
+          System.out.println();
+          System.out.println(key);
+          value.forEach(
+              i -> {
+                System.out.println(i.getMavenCoords());
+              });
+        });
     project
         .getExtensions()
         .getExtraProperties()

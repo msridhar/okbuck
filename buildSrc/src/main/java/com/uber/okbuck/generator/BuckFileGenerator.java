@@ -17,6 +17,7 @@ import com.uber.okbuck.composer.android.PreBuiltNativeLibraryRuleComposer;
 import com.uber.okbuck.composer.jvm.JvmLibraryRuleComposer;
 import com.uber.okbuck.composer.jvm.JvmTestRuleComposer;
 import com.uber.okbuck.core.dependency.ExternalDependency;
+import com.uber.okbuck.core.dependency.VersionlessDependency;
 import com.uber.okbuck.core.manager.BuckFileManager;
 import com.uber.okbuck.core.model.android.AndroidAppInstrumentationTarget;
 import com.uber.okbuck.core.model.android.AndroidAppTarget;
@@ -34,6 +35,7 @@ import com.uber.okbuck.template.android.AndroidRule;
 import com.uber.okbuck.template.core.Rule;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -72,28 +74,26 @@ public final class BuckFileGenerator {
 
     Map<String, Scope> scopeCache = ProjectCache.getScopeCache(project);
 
-    //    Map<VersionlessDependency, String> infoCache = ProjectCache.getInfoCache(project);
-    //
-    //    ConcurrentHashMap<String, HashMap<VersionlessDependency, String>> substitutionCache =
-    //        ProjectCache.getSubstitutionCache(project);
-    //
-    //    HashMap<VersionlessDependency, String> subsCache = new HashMap<>();
-    //    scopeCache.forEach(
-    //        (k, v) -> {
-    //          v.getExternalDeps()
-    //              .forEach(
-    //                  externalDep -> {
-    //                    VersionlessDependency versionlessDependency =
-    // externalDep.getVersionless();
-    //                    if (infoCache.containsKey(versionlessDependency)) {
-    //                      subsCache.put(versionlessDependency,
-    // infoCache.get(versionlessDependency));
-    //                    }
-    //                  });
-    //        });
-    //    if (subsCache.size() > 0) {
-    //      substitutionCache.put(project.getPath(), subsCache);
-    //    }
+    Map<VersionlessDependency, String> infoCache = ProjectCache.getInfoCache(project);
+
+    ConcurrentHashMap<String, HashMap<VersionlessDependency, String>> substitutionCache =
+        ProjectCache.getSubstitutionCache(project);
+
+    HashMap<VersionlessDependency, String> subsCache = new HashMap<>();
+    scopeCache.forEach(
+        (k, v) -> {
+          v.getExternalDeps()
+              .forEach(
+                  externalDep -> {
+                    VersionlessDependency versionlessDependency = externalDep.getVersionless();
+                    if (infoCache.containsKey(versionlessDependency)) {
+                      subsCache.put(versionlessDependency, infoCache.get(versionlessDependency));
+                    }
+                  });
+        });
+    if (subsCache.size() > 0) {
+      substitutionCache.put(project.getPath(), subsCache);
+    }
 
     boolean topLevel = ProjectUtil.getOkBuckExtension(project).topLevel;
 
@@ -109,12 +109,12 @@ public final class BuckFileGenerator {
           if (k.equals("compileClasspath") || k.equals("runtimeClasspath")) {
             extDeps.addAll(depSet);
           }
-          if (k.equals("testCompileClasspath") || k.equals("testRuntimeClasspath")) {
-            extDepsTest.addAll(depSet);
-          }
+          //          if (k.equals("testCompileClasspath") || k.equals("testRuntimeClasspath")) {
+          //            extDepsTest.addAll(depSet);
+          //          }
         });
     dependencyCache.put(project.getPath(), extDeps);
-    dependencyCache.put(project.getPath() + "__test", extDepsTest);
+    //    dependencyCache.put(project.getPath() + "__test", extDepsTest);
   }
 
   private static List<Rule> createRules(Project project) {
