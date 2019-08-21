@@ -9,15 +9,8 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-<<<<<<< HEAD
 import java.util.Optional;
 import java.util.stream.Collectors;
-=======
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
->>>>>>> Pad version names so buck sorts them properly
 
 import org.apache.commons.io.FilenameUtils;
 import org.gradle.api.artifacts.Dependency;
