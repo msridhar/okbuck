@@ -261,6 +261,7 @@ def autoValueParcelDeps = autoValueDeps + [deps.apt.autoValueParcel]
 afterEvaluate {
     dependencies {
         toolsExtraDepCache deps.external.saxon
+        toolsExtraDepCache deps.build.kotlinAllOpen
 
         autoValueAnnotations autoValueDeps
         autoValueGson autoValueGsonDeps
