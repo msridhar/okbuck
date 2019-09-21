@@ -2,7 +2,6 @@ package com.uber.okbuck.example
 
 import android.os.Bundle
 import android.widget.Toast
-import com.uber.okbuck.example.sqldelightmodel.GithubRepo
 import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
@@ -20,9 +19,6 @@ class MainActivity : DaggerAppCompatActivity() {
         fab.setOnClickListener {
             analytics.sendAnalyticsEvent("FAB Clicked")
         }
-
-        val repo = GithubRepo.create(100, "OkBuck", "auto buck")
-        Toast.makeText(this, repo.name + ": " + repo.description, Toast.LENGTH_SHORT).show()
     }
 
     companion object {

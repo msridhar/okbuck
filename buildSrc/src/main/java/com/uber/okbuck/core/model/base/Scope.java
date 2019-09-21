@@ -391,7 +391,7 @@ public class Scope {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof Scope)) {
       return false;
     }
     Scope scope = (Scope) o;

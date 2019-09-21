@@ -1,7 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply plugin: "com.android.application"
-apply plugin: "com.squareup.sqldelight"
 apply plugin: "kotlin-android"
 apply plugin: "kotlin-android-extensions"
 apply plugin: "kotlin-kapt"
@@ -17,7 +16,6 @@ android {
 
 tasks.withType(KotlinCompile).all {
     kotlinOptions {
-        allWarningsAsErrors = true
         freeCompilerArgs = ['-progressive', '-Xjsr305=strict']
     }
 }

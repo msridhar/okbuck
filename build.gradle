@@ -10,7 +10,6 @@ buildscript {
         classpath deps.build.butterKnifePlugin
         classpath deps.build.kotlinPlugin
         classpath deps.build.kotlinAllOpen
-        classpath deps.build.sqlDelightPlugin
         classpath deps.build.shadowJar
     }
     configurations.all {
@@ -107,20 +106,6 @@ def addCommonConfigurationForAndroidModules(Project project) {
         variants = project.android.applicationVariants
     } else {
         variants = project.android.libraryVariants
-    }
-
-    if (project.plugins.hasPlugin("com.squareup.sqldelight")) {
-        variants.all {
-
-            project.android.sourceSets."${it.name}".java.srcDir project.file("build/generated/source/sqldelight")
-            project.android.sourceSets."${it.name}".kotlin.srcDir project.file("build/generated/source/sqldelight")
-
-            project.afterEvaluate { proj ->
-                Task okbuckTask = proj.tasks.getByName("okbuck")
-                Task sqlDelightTask = proj.tasks.getByName("generate${it.name.capitalize()}SqlDelightInterface")
-                okbuckTask.dependsOn(sqlDelightTask)
-            }
-        }
     }
 }
 

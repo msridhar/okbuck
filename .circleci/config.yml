@@ -4,7 +4,7 @@ defaults: &defaults
   working_directory: ~/okbuck
   resource_class: xlarge
   docker:
-    - image: circleci/android:api-28-alpha
+    - image: circleci/android:api-29
   environment:
     SKIP_OKBUCK: true
     NO_BUCKD: 1

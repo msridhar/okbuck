@@ -1,6 +1,5 @@
 package com.uber.okbuck.core.manager;
 
-import com.android.projectmodel.JavaLibrary;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.uber.okbuck.OkBuckGradlePlugin;

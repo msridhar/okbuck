@@ -79,7 +79,7 @@ public final class DependencyUtils {
     try {
       return Files.asByteSource(file).hash(Hashing.sha256()).toString();
     } catch (IOException e) {
-      throw new RuntimeException(String.format("Failed to calculate shaSum256 of %s", file));
+      throw new RuntimeException(String.format("Failed to calculate shaSum256 of %s", file), e);
     }
   }
 
@@ -108,14 +108,6 @@ public final class DependencyUtils {
     } else {
       throw new IllegalStateException(
           String.format("Not a valid module filename %s", fileNameString));
-    }
-  }
-
-  private static long jarComparisonKeyFunction(File file) {
-    try {
-      return new JarFile(file).entries().nextElement().getTime();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 

@@ -3,7 +3,6 @@ package com.uber.okbuck.core.model.android;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.api.BaseVariant;
-import com.android.build.gradle.tasks.NdkCompile;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 /** An Android app target */
 public class AndroidAppTarget extends AndroidLibTarget {
 
-  private static final Logger LOG = LoggerFactory.getLogger(AndroidAppTarget.class);
   private static final int DEFAULT_LINEARALLOC_LIMIT = 16777216;
   private final boolean multidexEnabled;
   @Nullable private final Keystore keystore;
@@ -48,11 +46,8 @@ public class AndroidAppTarget extends AndroidLibTarget {
     minifyEnabled = getBaseVariant().getBuildType().isMinifyEnabled();
     keystore = extractKeystore();
 
-    BaseVariant baseVariant = getBaseVariant();
-    NdkCompile ndkCompile = baseVariant.getNdkCompile();
-
-    Set<String> filters = ndkCompile != null ? ndkCompile.getAbiFilters() : ImmutableSet.of();
-    cpuFilters = filters != null ? filters : ImmutableSet.of();
+    Set<String> abiFilters = getAndroidExtension().getSplits().getAbiFilters();
+    cpuFilters = abiFilters != null ? abiFilters : ImmutableSet.of();
 
     multidexEnabled =
         Optional.ofNullable(getBaseVariant().getBuildType().getMultiDexEnabled())

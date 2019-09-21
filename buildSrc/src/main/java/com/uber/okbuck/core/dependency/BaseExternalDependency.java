@@ -50,7 +50,7 @@ public abstract class BaseExternalDependency {
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     return this.getMavenCoords() + " -> " + realDependencyFile().toString();
   }
 

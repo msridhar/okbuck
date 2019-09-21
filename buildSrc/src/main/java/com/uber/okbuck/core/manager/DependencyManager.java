@@ -328,7 +328,7 @@ public class DependencyManager {
       try {
         FileUtils.deleteDirectory(cacheDir);
       } catch (IOException e) {
-        throw new RuntimeException("Could not delete dependency directory: " + cacheDir);
+        throw new RuntimeException("Could not delete dependency directory: " + cacheDir, e);
       }
     }
 

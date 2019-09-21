@@ -45,7 +45,7 @@ public class ExternalDependency {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof ExternalDependency)) {
       return false;
     }
     ExternalDependency that = (ExternalDependency) o;

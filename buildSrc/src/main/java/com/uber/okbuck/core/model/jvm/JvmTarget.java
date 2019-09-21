@@ -609,6 +609,7 @@ public class JvmTarget extends Target {
     return null;
   }
 
+  @SuppressWarnings("NoFunctionalReturnType")
   private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
     Set<Object> seen = ConcurrentHashMap.newKeySet();
     return t -> seen.add(keyExtractor.apply(t));

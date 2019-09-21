@@ -1,6 +1,7 @@
 package com.uber.okbuck.core.model.base;
 
 import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.Var;
 import java.util.List;
 
@@ -48,7 +49,7 @@ public enum RuleType {
     this.properties = ImmutableList.copyOf(properties);
   }
 
-  public List<String> getProperties() {
+  public ImmutableList<String> getProperties() {
     return properties;
   }
 

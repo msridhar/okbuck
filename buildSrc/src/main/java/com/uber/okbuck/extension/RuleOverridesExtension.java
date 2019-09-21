@@ -115,12 +115,12 @@ public class RuleOverridesExtension {
 
     // Add OkBuck defaults for rules not re-defined by user.
     OKBUCK_DEFINED_RULES.forEach(
-        ((ruleType, target) -> {
+        (ruleType, target) -> {
           String buckName = ruleType.getBuckName();
           configuredOverrides.computeIfAbsent(
               buckName,
               nativeRuleName -> new OverrideSetting(target, OKBUCK_PREFIX + nativeRuleName));
-        }));
+        });
 
     overridesMap = ImmutableMap.copyOf(configuredOverrides);
   }
