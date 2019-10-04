@@ -19,6 +19,7 @@ import com.uber.okbuck.core.util.ProjectUtil;
 import com.uber.okbuck.extension.ExternalDependenciesExtension;
 import com.uber.okbuck.extension.JetifierExtension;
 import com.uber.okbuck.extension.OkBuckExtension;
+import groovy.lang.Closure;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,6 +96,11 @@ public class Scope {
 
     if (configuration != null) {
       DependencyUtils.enforceChangingDeps(project, configuration);
+      Closure<Configuration> configurationClosure =
+          ProjectUtil.getOkBuckExtension(project).forEachOkbuckConfiguration;
+      if (configurationClosure != null) {
+        configurationClosure.call(project, configuration);
+      }
       extractConfiguration(configuration);
     }
   }
